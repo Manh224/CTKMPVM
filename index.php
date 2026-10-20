@@ -17,8 +17,9 @@ $columnMap = PromotionImporter::COLUMN_MAP;
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <meta name="theme-color" content="#067643">
-    <link rel="icon" type="image/png" href="assets/img/logo-green.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=2">
+    <link rel="icon" type="image/svg+xml" href="assets/img/icon-pavelmart.svg?v=1">
+    <link rel="apple-touch-icon" href="assets/img/icon-pavelmart.svg?v=1">
+    <link rel="stylesheet" href="assets/css/style.css?v=3">
 </head>
 <body>
 
@@ -240,6 +241,6 @@ $columnMap = PromotionImporter::COLUMN_MAP;
     };
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-<script src="assets/js/app.js?v=2" defer></script>
+<script src="assets/js/app.js?v=3" defer></script>
 </body>
 </html>

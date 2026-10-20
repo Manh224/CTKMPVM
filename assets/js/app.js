@@ -13,9 +13,7 @@
         { key: 'barcode', label: 'Barcode', type: 'code' },
         { key: 'ten', label: 'Tên hệ thống', type: 'name' },
         { key: 'dvt', label: 'ĐVT', type: 'text' },
-        { key: 'gia_thuong', label: 'Giá bán thường (-VAT)', type: 'money' },
         { key: 'gia_thuong_vat', label: 'Giá bán thường (+VAT)', type: 'money-old' },
-        { key: 'gia_km', label: 'Giá bán KM (-VAT)', type: 'money' },
         { key: 'gia_km_vat', label: 'Giá bán KM (+VAT)', type: 'money-km' },
         { key: 'qua_tang', label: 'Quà tặng kèm', type: 'gift' },
         { key: 'ti_le_giam', label: 'Tỉ lệ giảm giá bán', type: 'percent' },
@@ -92,6 +90,10 @@
                     <input id="${p}-q" class="input" type="search" placeholder="Tên, mã hệ thống, barcode, quà tặng...">
                 </div>
             </div>
+            ${compact ? `<button type="button" class="filters__toggle" id="${p}-toggle" aria-expanded="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+                Lọc<span class="filters__count" id="${p}-adv-count" hidden></span>
+            </button>` : ''}
             <div class="field">
                 <label for="${p}-pct-min">Tỉ lệ giảm giá bán (%)</label>
                 <div class="range">
@@ -125,7 +127,8 @@
                 </select>
             </div>
             <div class="filters__chips">
-                <span class="muted" style="font-size:12.5px">Lọc nhanh:</span>
+                <span class="filters__chips-label">Lọc nhanh:</span>
+                ${compact ? `<button type="button" class="chip chip--sort" id="${p}-chip-sort" data-sort="pct-desc">↓ % giảm cao → thấp</button>` : ''}
                 <button type="button" class="chip" id="${p}-chip-10" data-pct="10">Giảm ≥ 10%</button>
                 <button type="button" class="chip" id="${p}-chip-20" data-pct="20">Giảm ≥ 20%</button>
                 <button type="button" class="chip" id="${p}-chip-30" data-pct="30">Giảm ≥ 30%</button>
@@ -146,6 +149,7 @@
             priceMin: parseMoney($(`#${p}-price-min`).value),
             priceMax: parseMoney($(`#${p}-price-max`).value),
             type: $(`#${p}-type`).value,
+            sortPctDesc: !!$(`#${p}-chip-sort`)?.classList.contains('is-active'),
         };
     }
 
@@ -174,6 +178,14 @@
         const priceMax = parseMoney($(`#${p}-price-max`).value);
         $$(`[data-filter="${p}"] .chip[data-pct]`).forEach((c) => c.classList.toggle('is-active', pctMin === Number(c.dataset.pct)));
         $$(`[data-filter="${p}"] .chip[data-pmax]`).forEach((c) => c.classList.toggle('is-active', priceMax === Number(c.dataset.pmax)));
+        // Số bộ lọc nâng cao đang bật (hiện trên nút "Lọc" ở mobile)
+        const badge = $(`#${p}-adv-count`);
+        if (badge) {
+            const n = [`${p}-pct-min`, `${p}-pct-max`, `${p}-val-min`, `${p}-val-max`, `${p}-price-min`, `${p}-price-max`, `${p}-type`]
+                .filter((id) => $(`#${id}`).value.trim() !== '').length;
+            badge.textContent = n;
+            badge.hidden = n === 0;
+        }
     }
 
     function mountFilter(container, p, onChange, compact) {
@@ -197,9 +209,22 @@
             input.value = chip.classList.contains('is-active') ? '' : nf.format(Number(chip.dataset.pmax));
             fire();
         }));
+        $$('.chip[data-sort]', container).forEach((chip) => chip.addEventListener('click', () => {
+            chip.classList.toggle('is-active');
+            fire();
+        }));
+        const toggle = $(`#${p}-toggle`);
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                const box = $('.filters', container);
+                const open = box.classList.toggle('is-open');
+                toggle.setAttribute('aria-expanded', String(open));
+            });
+        }
         $(`#${p}-reset`).addEventListener('click', () => {
             $$('input', container).forEach((el) => { el.value = ''; });
             $(`#${p}-type`).value = '';
+            $$('.chip[data-sort]', container).forEach((c) => c.classList.remove('is-active'));
             fire();
         });
     }
@@ -227,7 +252,7 @@
         const numeric = col && /money|percent|discount/.test(col.type);
         return [...items].sort((a, b) => {
             const x = a[sort.key], y = b[sort.key];
-            if (numeric) return ((isNum(x) ? x : -Infinity) - (isNum(y) ? y : -Infinity)) * sort.dir;
+            if (numeric) return ((isNum(x) ? x : -1e15) - (isNum(y) ? y : -1e15)) * sort.dir;
             return String(x ?? '').localeCompare(String(y ?? ''), 'vi', { numeric: true }) * sort.dir;
         });
     }
@@ -450,8 +475,10 @@
 
     function renderCart() {
         const onlySelected = $('#only-selected').checked;
-        let items = applyFilter(state.items, readFilter('cart'));
+        const f = readFilter('cart');
+        let items = applyFilter(state.items, f);
         if (onlySelected) items = items.filter((it) => (state.cart.qty[it.id] || 0) > 0);
+        if (f.sortPctDesc) items = sortItems(items, { key: 'ti_le_giam', dir: -1 });
 
         $('#cart-table thead').innerHTML = `<tr>
             <th>Sản phẩm</th><th>ĐVT</th>
@@ -461,23 +488,23 @@
         $('#cart-table tbody').innerHTML = items.map((it) => {
             const q = state.cart.qty[it.id] || 0;
             return `<tr data-id="${esc(it.id)}" class="${q > 0 ? 'is-selected' : ''}">
-                <td class="name">
+                <td class="name c-name">
                     ${esc(it.ten)}
                     <div class="product-meta">${it.ma_he_thong ? `<span class="code">#${esc(it.ma_he_thong)}</span>` : ''}${it.barcode ? `<span class="code">${esc(it.barcode)}</span>` : ''}${it.ngay_ket_thuc ? `<span>đến ${fmtDate(it.ngay_ket_thuc)}</span>` : ''}</div>
                     ${it.qua_tang ? `<span class="gift">🎁 ${esc(it.qua_tang)}</span>` : ''}
                 </td>
-                <td class="nowrap">${esc(it.dvt) || dash}</td>
-                <td class="num">${isNum(it.gia_thuong_vat) ? `<span class="${it.ti_le_giam > 0 ? 'price-old' : ''}">${money(it.gia_thuong_vat)}</span>` : dash}</td>
-                <td class="num price-km">${isNum(it.gia_km_vat) ? money(it.gia_km_vat) : dash}</td>
-                <td class="center">${it.ti_le_giam > 0 ? `<span class="badge ${it.ti_le_giam >= 30 ? 'badge--hot' : ''}">-${pf.format(it.ti_le_giam)}%</span>` : dash}</td>
-                <td class="center">
+                <td class="nowrap c-dvt">${esc(it.dvt) || dash}</td>
+                <td class="num c-old">${isNum(it.gia_thuong_vat) ? `<span class="${it.ti_le_giam > 0 ? 'price-old' : ''}">${money(it.gia_thuong_vat)}</span>` : dash}</td>
+                <td class="num price-km c-km">${isNum(it.gia_km_vat) ? money(it.gia_km_vat) : dash}${it.dvt ? `<small class="per-unit">/${esc(it.dvt)}</small>` : ''}</td>
+                <td class="center c-pct">${it.ti_le_giam > 0 ? `<span class="badge ${it.ti_le_giam >= 30 ? 'badge--hot' : ''}">-${pf.format(it.ti_le_giam)}%</span>` : dash}</td>
+                <td class="center c-qty">
                     <div class="qty">
                         <button type="button" data-act="dec" aria-label="Giảm">−</button>
                         <input type="text" inputmode="numeric" value="${q}" aria-label="Số lượng ${esc(it.ten)}">
                         <button type="button" data-act="inc" aria-label="Tăng">+</button>
                     </div>
                 </td>
-                <td class="num line-total">${q > 0 ? money(lineTotal(it, q)) : dash}</td>
+                <td class="num line-total c-total">${q > 0 ? money(lineTotal(it, q)) : dash}</td>
             </tr>`;
         }).join('');
 
