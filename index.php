@@ -239,6 +239,6 @@ $columnMap = PromotionImporter::COLUMN_MAP;
     };
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-<script src="assets/js/app.js?v=4" defer></script>
+<script src="assets/js/app.js?v=5" defer></script>
 </body>
 </html>

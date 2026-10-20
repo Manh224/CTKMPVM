@@ -128,7 +128,7 @@
             </div>
             <div class="filters__chips">
                 <span class="filters__chips-label">Lọc nhanh:</span>
-                ${compact ? `<button type="button" class="chip chip--sort" id="${p}-chip-sort" data-sort="pct-desc">↓ % giảm cao → thấp</button>` : ''}
+                <button type="button" class="chip chip--sort" id="${p}-chip-sort" data-sort="pct-desc">↓ % giảm cao → thấp</button>
                 <button type="button" class="chip" id="${p}-chip-10" data-pct="10">Giảm ≥ 10%</button>
                 <button type="button" class="chip" id="${p}-chip-20" data-pct="20">Giảm ≥ 20%</button>
                 <button type="button" class="chip" id="${p}-chip-30" data-pct="30">Giảm ≥ 30%</button>
@@ -297,7 +297,12 @@
             return;
         }
 
-        const filtered = sortItems(applyFilter(state.items, readFilter('hunt')), state.huntSort);
+        const f = readFilter('hunt');
+        // Đồng bộ chip "% giảm cao → thấp" với trạng thái sắp xếp của bảng
+        const pctDesc = state.huntSort.key === 'ti_le_giam' && state.huntSort.dir === -1;
+        if (f.sortPctDesc) state.huntSort = { key: 'ti_le_giam', dir: -1 };
+        else if (pctDesc) state.huntSort = { key: null, dir: 1 };
+        const filtered = sortItems(applyFilter(state.items, f), state.huntSort);
         $('#hunt-count').textContent = nf.format(filtered.length);
         renderHuntHead();
         $('#hunt-table tbody').innerHTML = filtered.map((it) => `<tr>${COLUMNS.map((c) => renderCell(c, it)).join('')}</tr>`).join('');
@@ -667,6 +672,7 @@
             state.huntSort = state.huntSort.key === key
                 ? (state.huntSort.dir === 1 ? { key, dir: -1 } : { key: null, dir: 1 })
                 : { key, dir: 1 };
+            $('#hunt-chip-sort').classList.toggle('is-active', state.huntSort.key === 'ti_le_giam' && state.huntSort.dir === -1);
             renderHunt();
         });
 
