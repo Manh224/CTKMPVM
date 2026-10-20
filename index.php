@@ -103,12 +103,10 @@ $columnMap = PromotionImporter::COLUMN_MAP;
                         <div class="dropzone__hint" id="dropzone-hint">hoặc <u>bấm để chọn file</u> · .xlsx tối đa <?= (int) MAX_UPLOAD_MB ?>MB</div>
                     </label>
 
-                    <?php if ($requirePassword): ?>
-                        <div class="field">
-                            <label for="upload-password">Mật khẩu cập nhật</label>
-                            <input type="password" id="upload-password" name="password" class="input" autocomplete="current-password" required>
-                        </div>
-                    <?php endif; ?>
+                    <div class="field" id="password-field"<?= $requirePassword ? '' : ' hidden' ?>>
+                        <label for="upload-password">Mật khẩu cập nhật</label>
+                        <input type="password" id="upload-password" name="password" class="input" autocomplete="current-password">
+                    </div>
 
                     <div class="progress" id="upload-progress" hidden><span></span></div>
 
@@ -241,6 +239,6 @@ $columnMap = PromotionImporter::COLUMN_MAP;
     };
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-<script src="assets/js/app.js?v=3" defer></script>
+<script src="assets/js/app.js?v=4" defer></script>
 </body>
 </html>

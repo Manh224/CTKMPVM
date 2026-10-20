@@ -358,8 +358,9 @@
         $('#upload-form').addEventListener('submit', (e) => {
             e.preventDefault();
             if (!state.file) return;
-            const pw = $('#upload-password');
-            if (CONFIG.requirePassword && pw && !pw.value) { toast('Vui lòng nhập mật khẩu cập nhật', 'warn'); pw.focus(); return; }
+            const pwField = $('#password-field');
+            const pw = pwField && !pwField.hidden ? $('#upload-password') : null;
+            if (pw && !pw.value) { toast('Vui lòng nhập mật khẩu cập nhật', 'warn'); pw.focus(); return; }
             if (state.data && !confirm(`Dữ liệu cũ (${state.data.count} sản phẩm) sẽ bị xoá và thay bằng dữ liệu từ file mới. Tiếp tục?`)) return;
 
             const fd = new FormData();
@@ -399,6 +400,13 @@
                 } else {
                     result.innerHTML = `<div class="result result--err">⚠️ ${esc(res.error || 'Có lỗi xảy ra')}</div>`;
                     toast('Cập nhật thất bại', 'err');
+                    if (res.code === 'password' && pwField) {
+                        // Máy chủ yêu cầu mật khẩu (kể cả khi trang được tải trước lúc bật mật khẩu)
+                        pwField.hidden = false;
+                        const input = $('#upload-password');
+                        input.select();
+                        input.focus();
+                    }
                 }
             };
             xhr.onerror = () => {

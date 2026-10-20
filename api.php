@@ -45,7 +45,7 @@ try {
             respond(['ok' => false, 'error' => 'Phương thức không hợp lệ.'], 405);
         }
         if (UPLOAD_PASSWORD !== '' && !hash_equals(UPLOAD_PASSWORD, (string) ($_POST['password'] ?? ''))) {
-            respond(['ok' => false, 'error' => 'Mật khẩu cập nhật không đúng.'], 403);
+            respond(['ok' => false, 'code' => 'password', 'error' => 'Mật khẩu cập nhật không đúng hoặc chưa nhập.'], 403);
         }
         if (empty($_FILES['file'])) {
             respond(['ok' => false, 'error' => 'Không nhận được file. Có thể file vượt quá giới hạn post_max_size của máy chủ.'], 400);

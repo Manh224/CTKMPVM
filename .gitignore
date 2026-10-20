@@ -13,3 +13,6 @@ Desktop.ini
 .vscode/
 *.sublime-project
 *.sublime-workspace
+
+# Gói upload hosting
+*.zip
